@@ -1,6 +1,7 @@
 /* eslint-disable import/no-useless-path-segments */
 const express = require('express');
-const { signup } = require('./../controllers/authController');
+const { signup, login } = require('./../controllers/authController');
+
 const {
   getAllUsers,
   getSpecificUser,
@@ -11,6 +12,7 @@ const {
 
 const router = express.Router();
 router.post('/signup', signup);
+router.post('/login', login);
 router.route('/').get(getAllUsers).post(addNewUser);
 router
   .route('/:id')

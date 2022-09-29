@@ -12,7 +12,7 @@ class ApiFeatures {
     let queryString = JSON.stringify(queryObject);
     queryString = queryString.replace(
       /\b(gte|gt|lte|lt)\b/g,
-      (matched) => `$${matched}`
+      (matched) => `${matched}`
     );
     this.query = this.query.find(JSON.parse(queryString));
     return this;
@@ -48,6 +48,7 @@ class ApiFeatures {
     //   const numTours = await Tour.countDocuments();
     //   if (skipValue >= numTours) throw new Error('This page does not exist!');
     // }
+    console.log(this)
     return this;
   }
 }

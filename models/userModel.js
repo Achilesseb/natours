@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const { passwordStrength: checkPasswordStrength } = require('check-password-strength');
+const AppError = require('./../utils/appError');
 
 const userSchema = new mongoose.Schema({
    name: {
@@ -10,7 +12,7 @@ const userSchema = new mongoose.Schema({
       unique: true,
       trim: true,
       minlength: [5, 'Username must have at least 5 characters!'],
-      maxlength: [20, 'Username must have less or equal to 20 characters'],
+      maxlength: [50, 'Username must have less or equal to 30 characters'],
    },
    email: {
       type: String,
@@ -51,10 +53,27 @@ const userSchema = new mongoose.Schema({
       default: true,
       select: false,
    },
+   loginAttempts: {
+      type: Number,
+      default: 0,
+   },
+   lockUntil: Number,
 });
 
+userSchema.virtual('isLocked').get(function () {
+   return !!(
+      this.lockUntil &&
+      new Date(this.lockUntil).toLocaleTimeString() > new Date(Date.now()).toLocaleTimeString()
+   );
+});
 userSchema.pre('save', async function (next) {
    if (!this.isModified('password')) return next();
+   if (
+      checkPasswordStrength(this.password).value.toUpperCase() ===
+      process.env.PASSWORD_CHECK_STRENGTH_MIN
+   ) {
+      return next(new AppError('Password is too weak! Please use a stronger Password!', 403));
+   }
    this.password = await bcrypt.hash(this.password, 12); // 12 tells how much cpu power to use. Higher means better encryption!
    this.passwordConfirm = undefined;
    next();
@@ -89,6 +108,31 @@ userSchema.methods.createPasswordResetToken = function () {
    this.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
    this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
    return resetToken;
+};
+
+userSchema.methods.incrementLoginAttempts = function () {
+   const lockExpired = !!(
+      this.lockUntil &&
+      new Date(this.lockUntil).toLocaleTimeString() < new Date(Date.now()).toLocaleTimeString()
+   );
+   console.log(lockExpired, 'firstLog');
+   if (lockExpired) {
+      return this.update({
+         $set: { loginAttempts: 1 },
+         $unset: { lockUntil: 1 },
+      });
+   }
+   console.log(this.loginAttempts >= process.env.LOGIN_ATTEMPTS, this.isLocked, this.loginAttempts);
+   let updates = { $inc: { loginAttempts: 1 } };
+   const needToLock = this.loginAttempts >= process.env.LOGIN_ATTEMPTS && !this.isLocked;
+   console.log(needToLock, 'secondLog');
+   if (needToLock) {
+      updates.$set = {
+         lockUntil: Date.now() + process.env.LOGIN_FAILED_ATTEMPTS_INTERVAL * 60 * 1000,
+      };
+   }
+   console.log(this, 'Third log');
+   return this.update(updates).exec();
 };
 
 const User = mongoose.model('User', userSchema);

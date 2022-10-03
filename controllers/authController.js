@@ -15,7 +15,16 @@ const signToken = (id) => {
 
 const createSendToken = (user, statusCode, res) => {
    const token = signToken(user._id);
-   console.log(user);
+   const cookieOptions = {
+      expires: new Date(Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000),
+      // secure: true, //=>Uses HTTPS => JUST IN PRODUCTION
+      httpOnly: true, //=> PREVENTS CROSS SIDE SCRIPTING. NOT ACCESSED OR MODIFIED IN ANY WAY BY THE BROWSER!
+      //RECEIVE, STORE NAD SEND WITH ANY REQUEST!
+   };
+   if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
+   res.cookie('jwt', token, cookieOptions);
+
+   user.password = undefined;
    res.status(statusCode).json({
       status: 'success',
       token,
@@ -40,17 +49,32 @@ exports.signup = catchAsync(async (req, res, next) => {
 
 exports.login = catchAsync(async (req, res, next) => {
    const { email, password } = req.body;
+   //1)Check attempts to log in
 
-   // 1)Check if email and password exists && password is correct
+   // 2)Check if email and password input exists
    if (!email || !password) {
       return next(new AppError('Please provide email and password!', 404));
    }
-   //2) Check if user exists && password is correct
+   //3) Check if user exists && password is correct
    const user = await User.findOne({ email }).select('+password');
-   //3)If everything ok send back token!
+
+   //4)If everything ok send back token!
+   if (user.isLocked) {
+      await user.incrementLoginAttempts();
+      return next(
+         new AppError(
+            `Login attempts limit reached! Try again in ${
+               new Date(user.lockUntil).getMinutes() - new Date(Date.now()).getMinutes()
+            } minutes!`
+         )
+      );
+   }
    if (!user || !(await user.correctPassword(password, user.password))) {
+      await user.incrementLoginAttempts();
       return next(new AppError('Incorrect email or password!'), 401);
    }
+
+   user.update({ $set: { loginAttempts: 1 }, $unset: { lockUntil: 1 } }).exec();
    createSendToken(user, 200, res);
 });
 

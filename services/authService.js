@@ -3,6 +3,8 @@ const jwt = require('jsonwebtoken');
 const AppError = require('../utils/appError');
 const sendMail = require('../utils/email');
 
+const { correctPassword, incrementLoginAttempts } = require('./userService');
+
 const signToken = (id) => {
    return jwt.sign({ id }, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRES_IN,
@@ -43,7 +45,7 @@ exports.createNewUser = function (req) {
 
 exports.checkUserLockStatus = async function (user, password, next) {
    if (user.isLocked) {
-      await user.incrementLoginAttempts();
+      await incrementLoginAttempts(user);
       return next(
          new AppError(
             `Login attempts limit reached! Try again in ${
@@ -52,8 +54,8 @@ exports.checkUserLockStatus = async function (user, password, next) {
          )
       );
    }
-   if (!user || !(await user.correctPassword(password, user.password))) {
-      await user.incrementLoginAttempts();
+   if (!user || !(await correctPassword(password, user.password))) {
+      await incrementLoginAttempts(user);
       return next(new AppError('Incorrect email or password!'), 401);
    }
 
@@ -87,7 +89,7 @@ exports.checkPasswordOnUpdate = async function (user, req, next) {
       return next(new AppError('You must pe logged in to perform this action!', 403));
    }
    //2) Check if posted password is correct
-   if (!(await user.correctPassword(req.body.passwordCurrent, user.password))) {
+   if (!(await correctPassword(req.body.passwordCurrent, user.password))) {
       return next(new AppError('Password wrong! Try again or reset password!', 401));
    }
    user.password = req.body.password;

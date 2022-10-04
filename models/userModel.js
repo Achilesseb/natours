@@ -90,51 +90,6 @@ userSchema.pre(/^find/, function (next) {
    next();
 });
 
-userSchema.methods.correctPassword = async function (candidatePassword, userPassword) {
-   return await bcrypt.compare(candidatePassword, userPassword);
-};
-
-userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
-   if (this.passwordChangedAt) {
-      const changedTimeStamp = parseInt(this.passwordChangedAt.getTime() / 1000, 10);
-      return changedTimeStamp > JWTTimestamp;
-   }
-   return false;
-   //false means not changed || true=> Changed password- invalid token?
-};
-
-userSchema.methods.createPasswordResetToken = function () {
-   const resetToken = crypto.randomBytes(32).toString('hex');
-   this.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-   this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
-   return resetToken;
-};
-
-userSchema.methods.incrementLoginAttempts = function () {
-   const lockExpired = !!(
-      this.lockUntil &&
-      new Date(this.lockUntil).toLocaleTimeString() < new Date(Date.now()).toLocaleTimeString()
-   );
-
-   if (lockExpired) {
-      return this.update({
-         $set: { loginAttempts: 1 },
-         $unset: { lockUntil: 1 },
-      });
-   }
-
-   let updates = { $inc: { loginAttempts: 1 } };
-   const needToLock = this.loginAttempts >= process.env.LOGIN_ATTEMPTS && !this.isLocked;
-
-   if (needToLock) {
-      updates.$set = {
-         lockUntil: Date.now() + process.env.LOGIN_FAILED_ATTEMPTS_INTERVAL * 60 * 1000,
-      };
-   }
-
-   return this.update(updates).exec();
-};
-
 const User = mongoose.model('User', userSchema);
 
 module.exports = User;

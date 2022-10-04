@@ -11,6 +11,7 @@ const {
    createSendToken,
 } = require('../services/authService');
 
+const { changedPasswordAfter, createPasswordResetToken } = require('../services/userService');
 const User = require('../models/userModel');
 const catchAsync = require('./../utils/catchAsync');
 
@@ -53,7 +54,7 @@ exports.protect = catchAsync(async (req, res, next) => {
       return next(new AppError('The user no longer exists!', 401));
    }
    //4)Check if user changed password(token) after JWT was issued
-   if (freshUser.changedPasswordAfter(decoded.iat)) {
+   if (changedPasswordAfter(decoded.iat, freshUser)) {
       return next(new AppError('User recently changed password! Please log in again!', 401));
    }
    //Grant access to protected Route
@@ -79,7 +80,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
       return next(new AppError('User does`t exist! Sign up first!', 404));
    }
    //2)Generate random reset password
-   const resetToken = user.createPasswordResetToken();
+   const resetToken = createPasswordResetToken(user);
    await user.save({ validateBeforeSave: false });
 
    //3)Send it to users`s email

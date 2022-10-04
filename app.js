@@ -9,6 +9,7 @@ const rateLimit = require('express-rate-limit');
 
 const tourRouter = require('./Routes/tourRoutes');
 const userRouter = require('./Routes/userRoutes');
+const reviewRouter = require('./routes/reviewRoutes');
 
 const AppError = require('./utils/appError');
 
@@ -75,6 +76,7 @@ app.use((req, res, next) => {
 
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/tours', tourRouter);
+app.use('/api/v1/reviews', reviewRouter);
 
 app.all('*', (req, res, next) => {
    next(new AppError(`Can't find ${req.originalUrl} on this server`, 404)); //If we have something passed into next express will assume it is an error!

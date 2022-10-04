@@ -115,23 +115,23 @@ userSchema.methods.incrementLoginAttempts = function () {
       this.lockUntil &&
       new Date(this.lockUntil).toLocaleTimeString() < new Date(Date.now()).toLocaleTimeString()
    );
-   console.log(lockExpired, 'firstLog');
+
    if (lockExpired) {
       return this.update({
          $set: { loginAttempts: 1 },
          $unset: { lockUntil: 1 },
       });
    }
-   console.log(this.loginAttempts >= process.env.LOGIN_ATTEMPTS, this.isLocked, this.loginAttempts);
+
    let updates = { $inc: { loginAttempts: 1 } };
    const needToLock = this.loginAttempts >= process.env.LOGIN_ATTEMPTS && !this.isLocked;
-   console.log(needToLock, 'secondLog');
+
    if (needToLock) {
       updates.$set = {
          lockUntil: Date.now() + process.env.LOGIN_FAILED_ATTEMPTS_INTERVAL * 60 * 1000,
       };
    }
-   console.log(this, 'Third log');
+
    return this.update(updates).exec();
 };
 

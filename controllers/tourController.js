@@ -21,7 +21,11 @@ exports.checkBody = (req, res, next) => {
 };
 
 exports.getAllTours = catchAsync(async (req, res, next) => {
-   const features = new ApiFeatures(Tour.find(), req.query).filter().sort().limitFields().paginate();
+   const features = new ApiFeatures(Tour.find(), req.query)
+      .filter()
+      .sort()
+      .limitFields()
+      .paginate();
 
    const tours = await features.query;
 
@@ -74,7 +78,6 @@ exports.updateSpecificTour = catchAsync(async (req, res, next) => {
 });
 
 exports.deleteSpecificTour = catchAsync(async (req, res, next) => {
-
    const tour = await Tour.findByIdAndDelete(req.params.id);
 
    if (!tour) {

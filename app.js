@@ -7,8 +7,8 @@ const hpp = require('hpp');
 
 const rateLimit = require('express-rate-limit');
 
-const tourRouter = require('./Routes/tourRoutes');
-const userRouter = require('./Routes/userRoutes');
+const tourRouter = require('./routes/tourRoutes');
+const userRouter = require('./routes/userRoutes');
 const reviewRouter = require('./routes/reviewRoutes');
 
 const AppError = require('./utils/appError');

@@ -1,6 +1,6 @@
+const express = require('express');
 const { getAllReview, addNewReview } = require('../controllers/reviewController');
 const { protect, restrictTo } = require('../controllers/authController');
-const express = require('express');
 
 const router = express.Router();
 

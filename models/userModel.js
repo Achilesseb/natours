@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcryptjs');
-const crypto = require('crypto');
+
 const { passwordStrength: checkPasswordStrength } = require('check-password-strength');
-const AppError = require('./../utils/appError');
+const AppError = require('../utils/appError');
 
 const userSchema = new mongoose.Schema({
    name: {

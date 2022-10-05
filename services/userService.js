@@ -1,5 +1,6 @@
-const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
+
 exports.correctPassword = async function (candidatePassword, userPassword) {
    return await bcrypt.compare(candidatePassword, userPassword);
 };
@@ -11,10 +12,8 @@ exports.changedPasswordAfter = function (JWTTimestamp, user) {
    return false;
    //false means not changed || true=> Changed password- invalid token?
 };
-exports.createPasswordResetToken = function (user) {
+exports.createPasswordResetToken = function () {
    const resetToken = crypto.randomBytes(32).toString('hex');
-   user.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-   user.passwordResetExpires = Date.now() + 10 * 60 * 1000;
    return resetToken;
 };
 exports.incrementLoginAttempts = function (user) {
@@ -30,7 +29,7 @@ exports.incrementLoginAttempts = function (user) {
       });
    }
 
-   let updates = { $inc: { loginAttempts: 1 } };
+   const updates = { $inc: { loginAttempts: 1 } };
    const needToLock = user.loginAttempts >= process.env.LOGIN_ATTEMPTS && !user.isLocked;
 
    if (needToLock) {

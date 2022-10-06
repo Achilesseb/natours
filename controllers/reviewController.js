@@ -1,29 +1,14 @@
-const catchAsync = require('../utils/catchAsync');
 const Review = require('../models/reviewModel');
-const ApiFeatures = require('../utils/apiFeatures');
+const factory = require('./handlerFactory');
 
-exports.getAllReview = catchAsync(async (req, res, next) => {
-   const features = new ApiFeatures(Review.find(), req.query);
-   const reviews = await features.query;
-   res.status(200).json({
-      status: 'success',
-      results: reviews.length,
-      data: {
-         reviews,
-      },
-   });
-});
-
-exports.addNewReview = catchAsync(async (req, res, next) => {
-   //Allow nested routes!
+exports.setTourUserIds = (req, res, next) => {
    if (!req.body.tour) req.body.tour = req.params.tourId;
    if (!req.body.user) req.body.user = req.user.id;
+   next();
+};
 
-   const newReview = await Review.create(req.body);
-   res.status(201).json({
-      status: 'success',
-      data: {
-         review: newReview,
-      },
-   });
-});
+exports.getAllReview = factory.getAll(Review);
+exports.addNewReview = factory.addNewOne(Review);
+exports.deleteSpecificReview = factory.deleteOne(Review);
+exports.updateSpecificReview = factory.updateOne(Review);
+exports.getSpecificReview = factory.getOne(Review);

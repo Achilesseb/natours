@@ -1,6 +1,6 @@
 /* eslint-disable import/no-useless-path-segments */
 const express = require('express');
-const { addNewReview } = require('../controllers/reviewController');
+const reviewRouter = require('../routes/reviewRoutes');
 
 const {
    getAllTours,
@@ -17,7 +17,8 @@ const {
 const { protect, restrictTo } = require('./../controllers/authController');
 
 const router = express.Router();
-// router.param('id', checkId);
+
+router.use('/:tourId/reviews', reviewRouter);
 
 router.route('/tour-stats').get(getTourStats);
 router.route('/monthly-plan/:year').get(getMonthlyPlan);
@@ -28,7 +29,5 @@ router
    .get(getSpecificTour)
    .delete(protect, restrictTo('admin', 'lead-guide'), deleteSpecificTour)
    .patch(updateSpecificTour);
-
-router.route('/:tourId/reviews').post(protect, restrictTo('user'), addNewReview);
 
 module.exports = router;

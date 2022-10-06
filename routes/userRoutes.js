@@ -1,4 +1,3 @@
-/* eslint-disable import/no-useless-path-segments */
 const express = require('express');
 const {
    signup,
@@ -8,7 +7,7 @@ const {
    forgotPassword,
    resetPassword,
    updatePassword,
-} = require('./../controllers/authController');
+} = require('../controllers/authController');
 
 const {
    getAllUsers,
@@ -19,29 +18,30 @@ const {
    updateMe,
    deleteMe,
    getMe,
-} = require('./../controllers/userController');
+} = require('../controllers/userController');
 
 const router = express.Router();
+
 router.post('/signup', signup);
 router.post('/login', login);
 
 router.post('/forgotPassword', forgotPassword);
 router.patch('/resetPassword/:token', resetPassword);
 
-router.patch('/updatePassword', protect, updatePassword);
+router.use(protect); //All routes after this one are protected! Executed secventially.
 
-router.get('/me', protect, getMe, getSpecificUser);
-router.patch('/updateMe', protect, updateMe);
-router.delete('/deleteMe', protect, deleteMe);
+router.patch('/updatePassword', updatePassword);
+router.get('/me', getMe, getSpecificUser);
+router.patch('/updateMe', updateMe);
+router.delete('/deleteMe', deleteMe);
 
-router
-   .route('/')
-   .get(protect, restrictTo('admin'), getAllUsers)
-   .post(protect, restrictTo('admin'), addNewUser);
+router.use(restrictTo('admin')); //All routes after this are protected && RESTRICTED TO ADMIN!
+
+router.route('/').get(restrictTo('admin'), getAllUsers).post(restrictTo('admin'), addNewUser);
 router
    .route('/:id')
-   .get(getSpecificUser, protect, restrictTo('admin'))
-   .patch(updateSpecificUser, protect, restrictTo('admin'))
-   .delete(protect, restrictTo('admin'), deleteSpecificUser);
+   .get(getSpecificUser, restrictTo('admin'))
+   .patch(updateSpecificUser, restrictTo('admin'))
+   .delete(restrictTo('admin'), deleteSpecificUser);
 
 module.exports = router;

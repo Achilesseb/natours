@@ -6,7 +6,7 @@ const AppError = require('../utils/appError');
 exports.getOverview = catchAsync(async (req, res, next) => {
    // 1) Get tour data from collection
    const tours = await Tour.find();
-
+   console.log(User);
    // 2) Build template
    // 3) Render that template using tour data from 1)
    res.status(200).render('overview', {
@@ -41,8 +41,9 @@ exports.getLoginForm = (req, res) => {
 };
 
 exports.getAccount = (req, res) => {
+   console.log('hei', req.user);
    res.status(200).render('account', {
-      title: 'Your account',
+      user: req.user,
    });
 };
 

@@ -34,7 +34,7 @@ exports.signup = catchAsync(async (req, res, next) => {
 exports.login = catchAsync(async (req, res, next) => {
    try {
       const { email, password } = req.body;
-
+      console.log('wtf');
       // 2)Check if email and password input exists
       if (!email || !password) {
          return next(new AppError('Please provide email and password!', 404));
@@ -59,26 +59,31 @@ exports.login = catchAsync(async (req, res, next) => {
 });
 
 exports.isLoggedIn = async (req, res, next) => {
+   console.log(req.cookies.jwt);
    if (req.cookies.jwt) {
       try {
          // 1) verify token
+
          const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
 
          // 2) Check if user still exists
          const currentUser = await User.findById(decoded.id);
+         console.log(currentUser);
          if (!currentUser) {
             return next();
          }
 
          // 3) Check if user changed password after the token was issued
-         if (currentUser.changedPasswordAfter(decoded.iat)) {
+         if (changedPasswordAfter(decoded.iat, currentUser)) {
             return next();
          }
 
+         console.log(currentUser, 'Auth controller');
          // THERE IS A LOGGED IN USER
          res.locals.user = currentUser;
          return next();
       } catch (err) {
+         console.log(err);
          return next();
       }
    }
@@ -91,7 +96,10 @@ exports.protect = catchAsync(async (req, res, next) => {
       //1)Get token and check if exists!
       if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
          token = req.headers.authorization.split(' ')[1];
+      } else if (req.cookies.jwt) {
+         token = req.cookies.jwt;
       }
+      console.log(token);
       if (!token) throw new AppError('You are not logged in! Please log in to get access!', 401);
       //2)Validate token/Verification
       const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
@@ -106,6 +114,7 @@ exports.protect = catchAsync(async (req, res, next) => {
 
       //Grant access to protected Route
       req.user = freshUser;
+      console.log(req.user);
       next();
    } catch (err) {
       next(err);
@@ -150,6 +159,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
    }
 });
 exports.logout = (req, res) => {
+   console.log('se delogheaza');
    res.cookie('jwt', 'loggedout', {
       expires: new Date(Date.now() + 10 * 1000),
       httpOnly: true,

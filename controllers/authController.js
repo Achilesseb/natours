@@ -2,7 +2,7 @@ const { promisify } = require('util');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const AppError = require('../utils/appError');
-
+const Email = require('../utils/email');
 const {
    createNewUser,
    checkUserLockStatus,
@@ -20,6 +20,8 @@ const catchAsync = require('../utils/catchAsync');
 exports.signup = catchAsync(async (req, res, next) => {
    const newUser = await createNewUser(req.body);
    const { token, cookieOptions } = createSendToken(newUser);
+   const url = `${req.protocol}://${req.get('host')}/me`;
+   await new Email(newUser, url).sendWelcome();
    res.cookie('jwt', token, cookieOptions);
    res.status(201).json({
       status: 'success',

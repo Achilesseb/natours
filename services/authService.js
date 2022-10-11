@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 
 const User = require('../models/userModel');
 const AppError = require('../utils/appError');
-const sendMail = require('../utils/email');
+const Email = require('../utils/email');
 
 const { correctPassword, incrementLoginAttempts } = require('./userService');
 
@@ -55,13 +55,8 @@ exports.checkUserLockStatus = async function (user, password) {
 };
 
 exports.sendResetPasswordEmail = async function (user, resetURL) {
-   const message = `Forgot your password? Submit a PATCH request with your new password and passwordConfirm to: ${resetURL}.\n If you didn't initialize reseting your password ignore this email!`;
    try {
-      await sendMail({
-         email: user.email,
-         subject: 'Your password reset token (valid for 10 min)',
-         message,
-      });
+      await new Email(user, resetURL).sendResetPassword();
    } catch (err) {
       user.passwordResetToken = undefined;
       user.passwordResetExpires = undefined;

@@ -7,11 +7,13 @@ const xss = require('xss-clean');
 const hpp = require('hpp');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
+const compression = require('compression');
 
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
 const reviewRouter = require('./routes/reviewRoutes');
 const viewRouter = require('./routes/viewRoutes');
+const bookingRouter = require('./routes/bookingRoutes');
 const AppError = require('./utils/appError');
 
 const globalErrorHandler = require('./controllers/errorController');
@@ -23,8 +25,9 @@ app.set('view engine', 'pug');
 app.set('views', path.join(__dirname, 'views'));
 //1) MIDDLEWARES
 app.use(express.static(`${__dirname}/public`));
+app.use(compression);
 //Set security HTTP headers
-app.use(helmet());
+// app.use(helmet());
 
 //Development logging
 if (process.env.NODE_ENV === 'development') {
@@ -80,6 +83,7 @@ app.use('/', viewRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/reviews', reviewRouter);
+app.use('/api/v1/bookings', bookingRouter);
 
 app.all('*', (req, res, next) => {
    next(new AppError(`Can't find ${req.originalUrl} on this server`, 404)); //If we have something passed into next express will assume it is an error!

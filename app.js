@@ -8,6 +8,7 @@ const hpp = require('hpp');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 const compression = require('compression');
+const cors = require('cors');
 
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
@@ -26,6 +27,8 @@ app.set('views', path.join(__dirname, 'views'));
 //1) MIDDLEWARES
 app.use(express.static(`${__dirname}/public`));
 app.use(compression);
+app.use(cors());
+
 //Set security HTTP headers
 // app.use(helmet());
 app.post(

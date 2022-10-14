@@ -46,7 +46,7 @@ app.use(compression);
 app.use(cors());
 app.use(middleware.handle(i18next));
 app.use(express.json());
-app.use(timeout(15));
+// app.use(timeout(15));
 //Set security HTTP headers
 // app.use(helmet());
 app.post(

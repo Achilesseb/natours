@@ -1,8 +1,6 @@
 {
    "uncaught_exception": "Exceptie neprinsa! Se inchide...",
    "unhandled_exception": "Actiune respinsa! Se inchide...",
-   "DB_conexion_succesfull": "Conexiune stabilita cu Baza de date..",
-   "app_on_port": "Aplicatia ruleaza pe portul ",
    "not_image": "Obiectul inserat nu este o imagine. Va rugam inserati doar imagini.",
    "no_document_with_id": "Nici un document gasit cu acest ID."
 }

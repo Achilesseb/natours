@@ -13,6 +13,7 @@ const cors = require('cors');
 const i18next = require('i18next');
 const Backend = require('i18next-fs-backend');
 const middleware = require('i18next-http-middleware');
+const timeout = require('connect-timeout');
 
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
@@ -45,6 +46,7 @@ app.use(compression);
 app.use(cors());
 app.use(middleware.handle(i18next));
 app.use(express.json());
+app.use(timeout(15));
 //Set security HTTP headers
 // app.use(helmet());
 app.post(

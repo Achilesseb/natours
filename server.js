@@ -18,7 +18,7 @@ mongoose
    .connect(DB, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 10000,
    })
    .then(() => {
       console.log('DB_conexion_succesfull');
@@ -30,6 +30,7 @@ const port = process.env.PORT || 8000;
 
 const server = app.listen(port, () => {
    console.log(`App running on port ${port}... `);
+   console.log(porcess.env);
 });
 
 process.on('unhandledRejection', (err) => {

@@ -1,94 +1,89 @@
 const path = require('path');
 const express = require('express');
 const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
 const hpp = require('hpp');
 const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
-const rateLimit = require('express-rate-limit');
 const compression = require('compression');
 const cors = require('cors');
-const i18next = require('i18next');
-const Backend = require('i18next-fs-backend');
-const middleware = require('i18next-http-middleware');
-const timeout = require('connect-timeout');
 
+const AppError = require('./utils/appError');
+const globalErrorHandler = require('./controllers/errorController');
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
 const reviewRouter = require('./routes/reviewRoutes');
-const viewRouter = require('./routes/viewRoutes');
 const bookingRouter = require('./routes/bookingRoutes');
 const bookingController = require('./controllers/bookingController');
-const AppError = require('./utils/appError');
+const viewRouter = require('./routes/viewRoutes');
 
-const globalErrorHandler = require('./controllers/errorController');
-
+// Start express app
 const app = express();
-//Serving static files
 
-i18next
-   .use(Backend)
-   .use(middleware.LanguageDetector)
-   .init({
-      fallbackLng: 'en',
-      backend: {
-         loadPath: './locales/{{lng}}/translation.json',
-      },
-   });
 app.enable('trust proxy');
+
 app.set('view engine', 'pug');
 app.set('views', path.join(__dirname, 'views'));
-//1) MIDDLEWARES
-app.use(express.static(`${__dirname}/public`));
-app.use(compression);
+
+// 1) GLOBAL MIDDLEWARES
+// Implement CORS
 app.use(cors());
-// app.use(middleware.handle(i18next));
-// app.use(express.json());
-// app.use(timeout(15));
-//Set security HTTP headers
-// app.use(helmet());
+// Access-Control-Allow-Origin *
+// api.natours.com, front-end natours.com
+// app.use(cors({
+//   origin: 'https://www.natours.com'
+// }))
+
+app.options('*', cors());
+// app.options('/api/v1/tours/:id', cors());
+
+// Serving static files
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Set security HTTP headers
+app.use(helmet());
+
+// Development logging
+if (process.env.NODE_ENV === 'development') {
+   app.use(morgan('dev'));
+}
+
+// Limit requests from same API
+const limiter = rateLimit({
+   max: 100,
+   windowMs: 60 * 60 * 1000,
+   message: 'Too many requests from this IP, please try again in an hour!',
+});
+app.use('/api', limiter);
+
+// Stripe webhook, BEFORE body-parser, because stripe needs the body as stream
 app.post(
    '/webhook-checkout',
    bodyParser.raw({ type: 'application/json' }),
    bookingController.webhookCheckout
 );
-//Development logging
-if (process.env.NODE_ENV === 'development') {
-   app.use(morgan('dev'));
-}
 
-//Set limit request
-const limiter = rateLimit({
-   // Limiting Ip request to prevent BruteForce attacks and DOA attacks.
-   max: 100,
-   windowMs: 60 * 60 * 1000,
-   message: 'Too many request from this IP, please try again in one hour!',
-});
-
-app.use('/api', limiter);
+// Body parser, reading data from body into req.body
+app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(cookieParser());
-//Body parser, reading data from body to req.body
-app.use(
-   express.json({
-      extended: true,
-      limit: '10kb', //limit the data that comes from request
-   })
-);
 
-//Data sanitization against NoSQL query Injection
-app.use(mongoSanitize()); //removes dolarSigns and dots!
-//Data sanitization against CrossSide Attacks
+// Data sanitization against NoSQL query injection
+app.use(mongoSanitize());
+
+// Data sanitization against XSS
 app.use(xss());
 
-//Prevent parameter pollution
+// Prevent parameter pollution
 app.use(
    hpp({
       whitelist: [
          'duration',
-         'ratingsAverage',
          'ratingsQuantity',
+         'ratingsAverage',
          'maxGroupSize',
          'difficulty',
          'price',
@@ -96,22 +91,24 @@ app.use(
    })
 );
 
-//Test middleware
+app.use(compression());
+
+// Test middleware
 app.use((req, res, next) => {
    req.requestTime = new Date().toISOString();
+   // console.log(req.cookies);
    next();
 });
 
-//2) ROUTES
-
+// 3) ROUTES
 app.use('/', viewRouter);
-app.use('/api/v1/users', userRouter);
 app.use('/api/v1/tours', tourRouter);
+app.use('/api/v1/users', userRouter);
 app.use('/api/v1/reviews', reviewRouter);
 app.use('/api/v1/bookings', bookingRouter);
 
 app.all('*', (req, res, next) => {
-   next(new AppError(`Can't find ${req.originalUrl} on this server`, 404)); //If we have something passed into next express will assume it is an error!
+   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 
 app.use(globalErrorHandler);

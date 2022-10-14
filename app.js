@@ -10,6 +10,9 @@ const bodyParser = require('body-parser');
 const rateLimit = require('express-rate-limit');
 const compression = require('compression');
 const cors = require('cors');
+const i18next = require('i18next');
+const Backend = require('i18next-fs-backend');
+const middleware = require('i18next-http-middleware');
 
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
@@ -24,13 +27,24 @@ const globalErrorHandler = require('./controllers/errorController');
 const app = express();
 //Serving static files
 
+i18next
+   .use(Backend)
+   .use(middleware.LanguageDetector)
+   .init({
+      fallbackLng: 'en',
+      backend: {
+         loadPath: './locales/{{lng}}/translation.json',
+      },
+   });
+app.enable('trust proxy');
 app.set('view engine', 'pug');
 app.set('views', path.join(__dirname, 'views'));
 //1) MIDDLEWARES
 app.use(express.static(`${__dirname}/public`));
 app.use(compression);
 app.use(cors());
-
+app.use(middleware.handle(i18next));
+app.use(express.json());
 //Set security HTTP headers
 // app.use(helmet());
 app.post(

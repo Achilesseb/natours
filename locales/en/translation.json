@@ -1,0 +1,8 @@
+{
+   "uncaught_exception": "Uncaught Exception! Shutting down...",
+   "unhandled_exception": "Unhandled Rejection! Shutting down...",
+   "DB_conexion_succesfull": "DB connection successful",
+
+   "not_image": "Not a image! Please upload only images",
+   "no_document_with_id": "No document found with that ID!"
+}

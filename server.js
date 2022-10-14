@@ -20,7 +20,7 @@ mongoose
       useUnifiedTopology: true,
    })
    .then(() => {
-      console.log('DB connection successful');
+      console.log('DB_conexion_succesfull');
    });
 
 const app = require('./app');
@@ -37,5 +37,11 @@ process.on('unhandledRejection', (err) => {
    server.close(() => {
       //give the server time to end what processes need to run then shut down the app!
       process.exit(1); //uncaught exception
+   });
+});
+process.on('SIGTERM', () => {
+   console.log('👋 SIGTERM RECEIVED. Shutting down gracefully');
+   server.close(() => {
+      console.log('💥 Process terminated!');
    });
 });
